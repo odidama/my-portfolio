@@ -1,1 +1,1 @@
-# my-portfolio
+I created a porrtfolio that holds a number of my projects under one page. I built the front end with streamlit, hosted the db on a postgres cloud db provider (Supabase) and wrote the backend on Python. I have used pandas, langchain, sqlalchemy as some of the helper modules.
