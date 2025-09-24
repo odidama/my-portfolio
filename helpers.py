@@ -89,8 +89,8 @@ def transform_api_response():
     for i in boc_fx_response["observations"]:
         # print(i)
         data_prep = {'date': i['d'],
-                     'value': i['FXUSDCAD']['v'],
-                     'id': now_time}
+                     'value': i['FXUSDCAD']['v']
+                     }
         for key, value in boc_fx_response['seriesDetail'].items():
             data_prep["label"] = value['label']
         boc_normalized.append(data_prep)
