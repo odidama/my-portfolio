@@ -104,8 +104,8 @@ def transform_api_response():
         # print(items)
         data_prep = {'country_code': str(items['properties']['country_codes']).strip('[').strip(']').replace("'", "").replace('',"ZZZ"),
                      'name': items['properties']['name'],
-                     'source_schema': items['schema'],
-                     'id':now_time}
+                     'source_schema': items['schema']
+                     }
         person_normalized.append(data_prep)
     person_rdbms_format = pd.DataFrame(person_normalized)
     # print(person_rdbms_format)
