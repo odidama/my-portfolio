@@ -141,7 +141,7 @@ def transform_api_response():
         if k == 'text':
             # print(f"{k} : {v}")
             data_prep['text'] = v
-            data_prep['id'] = now_time
+            # data_prep['id'] = now_time
     normalized.append(data_prep)
     weather_rdbms_format = pd.DataFrame(normalized)
     # print(weather_rdbms_format)
