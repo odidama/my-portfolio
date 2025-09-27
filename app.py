@@ -122,20 +122,27 @@ with b:
     st.metric(label=f"{city} - {time_}", value=f"{remark}", border=True, height=120)
     st.metric(label=f"{today} - Bank of Canada Rate - USD/CAD", value=f"{fx_val}", border=True, height=160)
     with st.container(border=True, height=250):
-        source, author, title, description, url = helpers.get_news_article()
+        # source, author, title, description, url = helpers.get_news_article()
+        source_b = f"Forbes"
+        author_b = f"ByDerek Newton"
+        title_b = f"National Test Scores Are Down, Is Generative AI Partly To Blame?"
+        description_b = (f"American middle and high school students are not performing well on assessments, "
+                       f"indicating that fewer of them are learning even as much as their peers were "
+                       f"just a handful of years ago.")
+        url_b = (f"https://www.forbes.com/sites/dereknewton/2025/09/27/national-test-scores-are-down-is-generative-ai"
+               f"-partly-to-blame/")
+
+
         st.write(f"""
         **Latest from around the world:**
-        <br>:grey[{title}]
-        <br>:grey[by {author}]
-        <br>{description}
-        <br>{url}
+        <br>:grey[{title_b}]
+        <br>:grey[by {author_b}]
+        <br>{description_b}
+        <br>{url_b}
         """, unsafe_allow_html=True)
-
 
 st.markdown("---")
 boc_df = pd.read_sql_table("boc_fx", con=conn)
-# boc_df["value"] = boc_df["value"].apply(lambda x: Decimal(x))
-# boc_df["value"] = boc_df["value"].apply(lambda x: round(x, 2))
 fx_val = boc_df["value"].head(1).tolist()[0]
 # l_col, r_col = st.columns(2)
 # with r_col:
