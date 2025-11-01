@@ -2,12 +2,16 @@ import streamlit as st
 import plotly.express as px
 from decimal import Decimal
 import datetime
+import random
 from plotly.graph_objs.bar.marker.colorbar import Title
 import helpers
+import redis
+import json
 import pandas as pd
 
 eng, conn = helpers.connect_to_db()
 db_conn = conn.connect()
+redis_server = helpers.connect_redis_cloud()
 today = datetime.date.today()
 # time_now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
@@ -30,8 +34,9 @@ st.markdown(
     <style>
     section[data-testid="stSidebar"] {
         width: 310px !important; /* Set a fixed width */
-        min-width: 300px; /* Set a minimum width */
+        min-width: 320px; /* Set a minimum width */
         max-width: 500px; /* Set a maximum width */
+        background-color: #00091a;
     }
     </style>
     """,
@@ -74,87 +79,160 @@ st.markdown("""
     """, unsafe_allow_html=True)
 
 with st.sidebar:
-    st.sidebar.page_link("app.py", label="Home", icon="🦧")
-    st.sidebar.page_link("pages/1_Maestro_Dashboard_Agulu_(ETL).py", label="Maestro_Dashboard_Agulu_(ETL)", icon="🪼")
-    st.sidebar.page_link("pages/2_Ifem_The_Study_Buddy_(AI).py", label="Ifem_The_Study_Buddy_(AI)", icon="🦩")
-    st.sidebar.page_link("pages/3_Nnanna_The_Text_to_SQL_Alchemist_(AI).py", label="Nnanna_The_Text_to_SQL_Alchemist_(AI)", icon="🐿")
+    st.sidebar.page_link(page="app.py", label="Home")
+    st.sidebar.page_link(page="https://maestro-dashboard.streamlit.app/", label="Maestro Dashboard (ETL)")
+    st.sidebar.page_link(page="https://ifem-the-study-buddy.streamlit.app/", label="Study Buddy (AI)")
+    st.sidebar.page_link(page="https://geovactext-to-sql.streamlit.app/", label="Text to SQL(AI)")
+    st.sidebar.page_link(page="https://real-time-log-analytics.streamlit.app/", label="Log Analytics & Anomaly Detection (ML)" )
     st.divider()
 
-st.sidebar.success("Select any of the links above")
+# st.sidebar.write(" **Click any of the links above**")
 st.write("〈〈 Navigate some of my projects using the sidebar.")
 
 a,x,b = st.columns([0.5,0.1,0.3])
 with a:
     # a.title(f"The Data Artist 🦧", anchor=False)
     # st.write("\n")
-    a.title(":blue[Benjamin Okeke]")
-    a.write(
+    a.title(":blue[Nnaemeka Benjamin Okeke]")
+    a.write(":grey[Full-stack data engineer assisting enterprises in automating workflows and supporting scalable data ecosystems.]")
+    # st.write("\n")
+    st.subheader(":blue[Education and Training]", anchor=False)
+    st.write(
         """
-        Full-stack data engineer assisting enterprises in 
-        automating workflows and supporting scalable data ecosystems.
-        <br>:grey[BSc  |  ITIL  |  Databricks Lakehouse Fundamentals Accreditation    <br>Microsoft Certified Azure Cloud Fundamentals]
+        :green[Bachelor of Science <br> ITIL V3 <br>  Databricks Lakehouse Fundamentals Accreditation 
+        <br> Microsoft Certified Azure Cloud Fundamentals <br> Mastering Databricks & Apache spark -Build ETL data pipeline]
         <br>nnaemeka.okeke@gmail.com
         """,unsafe_allow_html=True
     )
     st.write("\n")
-    st.subheader(":blue[Experience and Qualifications]", anchor=False)
+    st.subheader(":blue[Summary]", anchor=False)
     st.write(
         """
-        Strong hands-on experience in Python and SQL
-        \n3 years experience building ETL pipelines and visualizing data.
-        \nCollaborative and agile team player with a passion for continuous learning.
+        * Innovative Data Developer with a strong background in data engineering, analytics, and software development.
+        * Adept at designing and implementing scalable data solutions that enhance system reliability and performance.
+        * Skilled in Python, SQL, and cloud-based data ecosystems, with hands-on experience in automation, API integration, and data pipeline development.
+        * Proven ability to analyze complex problems, drive cross-functional collaboration, and deliver high-quality technical solutions.
+        * Experienced in mentoring junior developers, conducting code reviews, and improving team development practices.
+        * Passionate about building reliable, high-performance systems that transform raw data into actionable insights.
         """, unsafe_allow_html=True
     )
     st.write("\n")
-    st.subheader(":blue[Hard Skills]")
+    st.subheader(":blue[Work Experience]")
+    # st.write("\n")
+    st.markdown(":blue[**Service Delivery Analyst – Business Intelligence Platform**] - House of Commons, Canada | Dec 2022 – Sept 2025")
     st.write(
         """
-        **Programming**: Python(Pandas,Plotly,Streamlit), SQL, PySpark, Bash.
-        \n**Databases**: RDBMS(MySQL,Postgres, SQLServer), NoSQL(Couchdb, MongoDB)
-        \n**AI Tools**: OpenAI API, Hugging Face, Langchain
-        \n**Data Visualization**: PowerBI, Streamlit, Plotly
-        \n**Cloud**: AWS, GCP, and Azure.
+        * Participated in architectural planning and implemented end-to-end data solutions aligned with enterprise standards and scalability goals.
+        * Translated business requirements into data models, metrics, and dashboards using Power BI, SQL Server, Databricks and Streamlit.
+        * Developed and maintained data pipelines using Python, SQL, and Spark, enabling efficient data ingestion, transformation, and validation.
+        * Contributed to CI/CD pipelines using Azure DevOps, enhancing the consistency and scalability of analytics deployments.
+        * Implemented automation scripts to streamline data ingestion, testing, and deployment processes—reducing manual workload by 35%.
         """, unsafe_allow_html=True
     )
+    st.write("")
+    st.markdown(":blue[**Application Engineer - Integration & Automation**] - Identos, Canada | Aug 2022 – Dec 2022")
+    st.write(
+        """
+        * Automated log parsing with regular expressions to extract structured data from unformatted logs and error reports.
+        * Supported secure digital identity integrations for public sector clients using Azure App Insights, SQL, and Python.
+        * Collaborated with DevOps engineers to containerize services and improve scalability in production.
+        * Worked closely with the analytics team to design and develop models and dashboards, supporting data-driven decision-making.
+        """, unsafe_allow_html=True
+    )
+    st.write("")
+    st.markdown(":blue[**Data and Systems Integration Lead**] - Sherpa, Canada | Nov 2021 – Jul 2022")
+    st.write(
+        """
+        * I helped clients integrate their platforms with Sherpa products and global travel APIs using SDKs and Webhooks.
+        * Implemented data validation and pipeline reliability checks, reducing downtime and enhancing delivery accuracy for global travel data systems.
+        * Worked with product and engineering teams to map and optimize data ingestion logic for cross-platform analytics.
+        * Managed data pipelines interacting with relational databases using SQL and SQLAlchemy ORM.
+        """, unsafe_allow_html=True
+    )
+    st.write("")
+    st.markdown(":blue[**Senior Associate - Data Integration**] - Appnovation Technologies, Canada | Feb 2020 – Nov 2021")
+    st.write(
+        """
+        * Led data ingestion and transformation for healthcare analytics systems, enabling targeted insights for digital marketing compliance.
+        * Implemented data validation and anomaly detection frameworks using Python, Pytest, Pandas and Redshift to ensure PII-compliant, accurate data delivery.
+        * Worked with product and engineering teams to map and optimize data ingestion logic for cross-platform analytics.
+        """, unsafe_allow_html=True
+    )
+    st.write("\n")
+    st.subheader(":blue[Skills]")
+    st.write(
+        """
+        Programming : `Python`,`Shell`,`JS`  
+        Data Processing : `SQL`,`Pandas`,`Numpy`,`PySpark`
+        <br>Data Visualization : `Streamlit`,`Plotly`,`PowerBI`
+        <br>Machine Learning : `scikit-learn`
+        <br>Web Development : `FastAPI`,`REST`,`HTML`,`CSS`
+        """, unsafe_allow_html=True
+    )
+    st.write("\n")
+    st.subheader(":blue[Social Media]")
+    st.write(
+        """
+        `LinkedIn` : https://www.linkedin.com/in/benjaminokeke/  
+        `github` : https://github.com/odidama | https://github.com/eluemuno
+        <br>`portfolio` : https://benjamin-okeke-portfolio.streamlit.app/
+        """, unsafe_allow_html=True
+    )
+    st.write("\n")
+    st.write("nnaemeka.okeke@gmail.com")
 
 with b:
-    st.metric(label=f"{city} - Temperature - {time_}", value=f"{temp}°c", border=True, height=120)
-    st.metric(label=f"{city} - {time_}", value=f"{remark}", border=True, height=120)
-    st.metric(label=f"{today} - Bank of Canada Rate - USD/CAD", value=f"{fx_val}", border=True, height=160)
+    st.metric(label=f"{city} - {time_}   |   BoC Rate - USD/CAD ", value=f"{temp}°c | {fx_val}", border=True, height=120)
+    # st.metric(label=f"{city} - {time_}", value=f"{remark}", border=True, height=120)
+    # st.metric(label=f"{today} - Bank of Canada Rate - USD/CAD", value=f"{fx_val}", border=True, height=160)
     with st.container(border=True, height=250):
-        # source, author, title, description, url = helpers.get_news_article()
-        source_b = f"Forbes"
-        author_b = f"ByDerek Newton"
-        title_b = f"National Test Scores Are Down, Is Generative AI Partly To Blame?"
-        description_b = (f"American middle and high school students are not performing well on assessments, "
-                       f"indicating that fewer of them are learning even as much as their peers were "
-                       f"just a handful of years ago.")
-        url_b = (f"https://www.forbes.com/sites/dereknewton/2025/09/27/national-test-scores-are-down-is-generative-ai"
-               f"-partly-to-blame/")
+        news_dict_list = helpers.get_items_from_redis("news_articles")
+        single_article = news_dict_list[random.randint(1, len(news_dict_list))]
+
+        author_b = single_article['news_author']
+        title_b = single_article['news_title']
+        url_b = single_article['news_url']
 
 
         st.write(f"""
         **Latest from around the world:**
         <br>:grey[{title_b}]
         <br>:grey[by {author_b}]
-        <br>{description_b}
         <br>{url_b}
         """, unsafe_allow_html=True)
+    with st.container(border=False, height=350,vertical_alignment='center'):
+        st.subheader(":blue[Core Skills]")
+        st.write(
+            """
+            * Data Engineering & ETL Development
+            * Data Modeling & Analytics
+            * Solution Architecture & System Integration
+            * Automation & Workflow Optimization
+            * Cloud Platforms
+            * CI/CD, Git, Docker
+            * Agile & DevOps Practices
+            * Testing & Quality Assurance
+            * Technical Documentation & Mentorship
+            """, unsafe_allow_html=True
+        )
 
-st.markdown("---")
-boc_df = pd.read_sql_table("boc_fx", con=conn)
-fx_val = boc_df["value"].head(1).tolist()[0]
-# l_col, r_col = st.columns(2)
-# with r_col:
-#     # st.markdown("Daily BOC Rate Figures")
-#     fig = px.line(boc_df, x=boc_df["date"], y=boc_df["value"], title="Bank Of Canada FX Rate", height=400)
-#     st.plotly_chart(fig, use_container_width=True )
 
-
-weather_tab = pd.read_sql_table("weather", con=conn)
-
-
-st.dataframe(weather_tab, height=150, width=800, hide_index=True)
+# st.markdown("---")
+# boc_df = pd.read_sql_table("boc_fx", con=conn)
+# fx_val = boc_df["value"].head(1).tolist()[0]
+# # l_col, r_col = st.columns(2)
+# # with r_col:
+# #     # st.markdown("Daily BOC Rate Figures")
+# #     fig = px.line(boc_df, x=boc_df["date"], y=boc_df["value"], title="Bank Of Canada FX Rate", height=400)
+# #     st.plotly_chart(fig, use_container_width=True )
+#
+#
+# weather_tab = pd.read_sql_table("weather", con=conn)
+#
+#
+# st.dataframe(weather_tab, height=150, width=800, hide_index=True)
+st.write("\n")
+st.write("\n")
 st.write("\n")
 
 

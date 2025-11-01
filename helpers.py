@@ -7,9 +7,11 @@ import pandas as pd
 import logging
 import random
 from functools import cache
+import redis
+import json
 from langchain_community.utilities import SQLDatabase
 from langchain_community.document_loaders import TextLoader
-from langchain.text_splitter import CharacterTextSplitter
+from langchain_text_splitters import  CharacterTextSplitter
 from dotenv import load_dotenv
 from pathlib import Path
 
@@ -22,11 +24,13 @@ load_dotenv()
 
 endDate = datetime.date.today()
 startDate = endDate - datetime.timedelta(days=1)
+
+# noinspection PyPackageRequirements
 cities = ['Mexico','New York','Toronto','Guadalajara','Montreal','Los Angeles','Chicago','Vancouver',
         'San Juan','Tijuana','Brooklyn','Houston','Havana','Panama City','Calgary','Edmonton','Philadelphia',
         'Phoenix','San Jose','Manhattan','Ottawa','San Diego','Juarez','Dallas']
 
-topics = ['ai','cyber security']
+
 now_time = datetime.datetime.now().strftime("%d%H%M%S")
 
 logging.basicConfig(level=logging.INFO, filename=os.path.dirname(os.path.abspath('logs.txt')) + '/logs.txt',
@@ -49,8 +53,9 @@ def connect_to_db():
         print(f"Error connecting to DB: {e}")
         return None
 
-eng, conn = connect_to_db()
-db_conn = conn.connect()
+# eng, conn = connect_to_db()
+
+# db_conn = conn.connect()
 
 def fetch_data(*args):
     # api_objects = os.getenv("API_OBJECTS")
@@ -84,8 +89,8 @@ def fetch_data(*args):
 
 def transform_api_response():
     boc_fx_response, persons_response, weather_response = fetch_data(startDate, endDate)
-    boc_rdbms_format = []
-    boc_normalized = []
+    # boc_rdbms_format = []
+    # boc_normalized = []
     for i in boc_fx_response["observations"]:
         # print(i)
         data_prep = {'date': i['d'],
@@ -93,23 +98,33 @@ def transform_api_response():
                      }
         for key, value in boc_fx_response['seriesDetail'].items():
             data_prep["label"] = value['label']
-        boc_normalized.append(data_prep)
-    boc_rdbms_format = pd.DataFrame(boc_normalized)
-    # print(boc_rdbms_format)
-    boc_rdbms_format.to_sql(name='boc_fx', con=conn, if_exists='append', index=False)
+        # print(data_prep)
+        q_items_to_redis(data_prep, 'boc_fx')
+        print(f"boc_fx data has been queued on Redis: {data_prep}")
+    # for i in boc_fx_response["observations"]:
+    #     # print(i)
+    #     data_prep = {'date': i['d'],
+    #                  'value': i['FXUSDCAD']['v']
+    #                  }
+    #     for key, value in boc_fx_response['seriesDetail'].items():
+    #         data_prep["label"] = value['label']
+    #     boc_normalized.append(data_prep)
+    # boc_rdbms_format = pd.DataFrame(boc_normalized)
+    # # print(boc_rdbms_format)
+    # boc_rdbms_format.to_sql(name='boc_fx', con=conn, if_exists='append', index=False)
 
     person_rdbms_format = []
-    person_normalized = []
-    for items in persons_response['data']:
-        # print(items)
-        data_prep = {'country_code': str(items['properties']['country_codes']).strip('[').strip(']').replace("'", "").replace('',"ZZZ"),
-                     'name': items['properties']['name'],
-                     'source_schema': items['schema']
-                     }
-        person_normalized.append(data_prep)
-    person_rdbms_format = pd.DataFrame(person_normalized)
-    # print(person_rdbms_format)
-    person_rdbms_format.to_sql(name='persons', con=conn, if_exists='append', index=False)
+    # person_normalized = []
+    # for items in persons_response['data']:
+    #     # print(items)
+    #     data_prep = {'country_code': str(items['properties']['country_codes']).strip('[').strip(']').replace("'", "").replace('',"ZZZ"),
+    #                  'name': items['properties']['name'],
+    #                  'source_schema': items['schema']
+    #                  }
+    #     person_normalized.append(data_prep)
+    # person_rdbms_format = pd.DataFrame(person_normalized)
+    # # print(person_rdbms_format)
+    # person_rdbms_format.to_sql(name='persons', con=conn, if_exists='append', index=False)
 
     weather_rdbms_format = []
     normalized = []
@@ -145,7 +160,7 @@ def transform_api_response():
     normalized.append(data_prep)
     weather_rdbms_format = pd.DataFrame(normalized)
     # print(weather_rdbms_format)
-    weather_rdbms_format.to_sql(name='weather', con=conn, if_exists='append', index=False)
+    # weather_rdbms_format.to_sql(name='weather', con=conn, if_exists='append', index=False)
 
     return weather_rdbms_format
 
@@ -154,101 +169,92 @@ def show_contact_form():
     st.text_input("Name")
     pass
 
-# -----------------------------------------------------------------------------------------------------------
-#
-# Canada population dashboard helpers
-#
-# -----------------------------------------------------------------------------------------------------------
-
-@cache
-def read_population_data():
-    population_df = pd.read_sql_table("population", con=conn)
-    # print(population_df)
-    return population_df
-
-df = read_population_data()
-
-def transform_df():
-
-    can_df = df.loc[df['REGION_NAME'] == 'Canada']
-    can_df_agGrp = df.loc[df['REGION_NAME'] == 'Canada'].iloc[8:33]
-    can_df_summary = df.loc[df['REGION_NAME'] == 'Canada'].iloc[0:7]
-
-    nfl_df = df.loc[df['REGION_NAME'] == 'Newfoundland and Labrador']
-    nfl_df_agGrp = df.loc[df['REGION_NAME'] == 'Newfoundland and Labrador'].iloc[8:33]
-    nfl_df_summary = df.loc[df['REGION_NAME'] == 'Newfoundland and Labrador'].iloc[0:7]
-
-    pei_df = df.loc[df['REGION_NAME'] == 'Prince Edward Island']
-    pei_df_agGrp = df.loc[df['REGION_NAME'] == 'Prince Edward Island'].iloc[8:33]
-    pei_df_summary = df.loc[df['REGION_NAME'] == 'Prince Edward Island'].iloc[0:7]
-
-    ns_df = df.loc[df['REGION_NAME'] == 'Nova Scotia']
-    ns_df_agGrp = df.loc[df['REGION_NAME'] == 'Nova Scotia'].iloc[8:33]
-    ns_df_summary = df.loc[df['REGION_NAME'] == 'Nova Scotia'].iloc[0:7]
-
-    nb_df = df.loc[df['REGION_NAME'] == 'New Brunswick']
-    nb_df_agGrp = df.loc[df['REGION_NAME'] == 'New Brunswick'].iloc[8:33]
-    nb_df_summary = df.loc[df['REGION_NAME'] == 'New Brunswick'].iloc[0:7]
-
-    qu_df = df.loc[df['REGION_NAME'] == 'Quebec']
-    qu_df_agGrp = df.loc[df['REGION_NAME'] == 'Quebec'].iloc[8:33]
-    qu_df_summary = df.loc[df['REGION_NAME'] == 'Quebec'].iloc[0:7]
-
-    on_df = df.loc[df['REGION_NAME'] == 'Ontario']
-    on_df_agGrp = df.loc[df['REGION_NAME'] == 'Ontario'].iloc[8:33]
-    on_df_summary = df.loc[df['REGION_NAME'] == 'Ontario'].iloc[0:7]
-
-    mb_df = df.loc[df['REGION_NAME'] == 'Manitoba']
-    mb_df_agGrp = df.loc[df['REGION_NAME'] == 'Manitoba'].iloc[8:33]
-    mb_df_summary = df.loc[df['REGION_NAME'] == 'Manitoba'].iloc[0:7]
-
-    sk_df = df.loc[df['REGION_NAME'] == 'Saskatchewan']
-    sk_df_agGrp = df.loc[df['REGION_NAME'] == 'Saskatchewan'].iloc[8:33]
-    sk_df_summary = df.loc[df['REGION_NAME'] == 'Saskatchewan'].iloc[0:7]
-
-    ab_df = df.loc[df['REGION_NAME'] == 'Alberta']
-    ab_df_AgGrp = df.loc[df['REGION_NAME'] == 'Alberta'].iloc[8:33]
-    ab_df_summary = df.loc[df['REGION_NAME'] == 'Alberta'].iloc[0:7]
-
-    bc_df = df.loc[df['REGION_NAME'] == 'British Columbia']
-    bc_df_agGrp = df.loc[df['REGION_NAME'] == 'British Columbia'].iloc[8:33]
-    bc_df_summary = df.loc[df['REGION_NAME'] == 'British Columbia'].iloc[0:7]
-
-    yk_df = df.loc[df['REGION_NAME'] == 'Yukon']
-    yk_df_agGrp = df.loc[df['REGION_NAME'] == 'Yukon'].iloc[8:33]
-    yk_df_summary = df.loc[df['REGION_NAME'] == 'Yukon'].iloc[0:7]
-
-    nwt_df = df.loc[df['REGION_NAME'] == 'Northwest Territories']
-    nwt_df_agGrp = df.loc[df['REGION_NAME'] == 'Northwest Territories'].iloc[8:33]
-    nwt_df_summary = df.loc[df['REGION_NAME'] == 'Northwest Territories'].iloc[0:7]
-
-    nu_df = df.loc[df['REGION_NAME'] == 'Nunavut']
-    nu_df_agGrp = df.loc[df['REGION_NAME'] == 'Nunavut'].iloc[8:33]
-    nu_df_summary = df.loc[df['REGION_NAME'] == 'Nunavut'].iloc[0:7]
-
-    all_AgeGrp_Data_combined = pd.concat([can_df_agGrp, nfl_df_agGrp, pei_df_agGrp, ns_df_agGrp, nb_df_agGrp,
-                                          qu_df_agGrp, on_df_agGrp, mb_df_agGrp, nb_df_agGrp, sk_df_agGrp, ab_df_AgGrp,
-                                          bc_df_agGrp, yk_df_agGrp, nwt_df_agGrp, nu_df_agGrp], axis=0)
-
-    all_Df_Summary_Combined = pd.concat([can_df_summary, nfl_df_summary, pei_df_summary, ns_df_summary, nb_df_summary,
-                                         qu_df_summary, on_df_summary, mb_df_summary, nb_df_summary, sk_df_summary,
-                                         ab_df_summary, bc_df_summary, yk_df_summary, nwt_df_summary,
-                                         nu_df_summary], axis=0)
-
-    return all_AgeGrp_Data_combined, all_Df_Summary_Combined
-
 
 def get_news_article():
-    # news_url = f"https://newsapi.org/v2/everything?q={random.choice(topics)}&apiKey={os.getenv('NEWS_API_KEY')}&pageSize=1"
-    news_url = f"https://newsapi.org/v2/everything?q={random.choice(topics)}&apiKey={st.secrets['NEWS_API_KEY']}&pageSize=1"
-    result = requests.get(news_url)
+    topics = ['cyber security']
+    date_today = datetime.datetime.now().strftime("%Y-%m-%d")
+    w_news_url = f"https://api.worldnewsapi.com/search-news?text={random.choice(topics)}&language=en&earliest-publish-date={date_today}"
+
+    headers = {
+        'x-api-key': st.secrets['w_news_api']
+    }
+
+    result = requests.get(w_news_url, headers=headers)
     news_result = result.json()
-    print(type(news_result))
-    for i in news_result["articles"]:
-        source = i["source"]["name"]
-        author = i["author"]
-        title = i["title"]
-        description = i["description"]
-        url = i["url"]
-        # print(i)
-    return source, author, title, description, url
+    all_news = []
+    for i in news_result['news']:
+        ind_news = {
+            "id": i["id"],
+            "news_author": i["author"],
+            "news_title": i["title"],
+            "news_url": i["url"]
+        }
+        all_news.append(ind_news)
+
+    return all_news
+
+def connect_redis_cloud():
+    redis_url = st.secrets['cl_redis_url']
+    try:
+        r = redis.from_url(redis_url)
+
+        # r = redis.Redis(
+        #     host= st.secrets['cl_redis_host'],
+        #     port= 16478,
+        #     decode_responses=True,
+        #     username=st.secrets['cl_redis_user'],
+        #     password=st.secrets['cl_redis_password'],
+        #     db=1
+        # )
+        return r
+    except redis.exceptions.ConnectionError as e:
+        st.error(f"Could not connect to Redis Cloud: {e}")
+    except Exception as e:
+        st.error(f"An unexpected error occurred: {e}")
+        # success = r.set('foo', 'bar')
+        # True
+
+        # result = r.get('foo')
+        # print(result)
+        # >>> bar
+
+redis_server = connect_redis_cloud()
+
+
+# def q_news_to_redis():
+#     news_data = get_news_article()
+#     redis_server.delete('news_articles')
+#     for news in news_data:
+#         redis_server.rpush('news_articles', json.dumps(news))
+#     print("Dictionaries stored in a Redis List.")
+#     return news_data
+
+def q_items_to_redis(data, stream):
+    # news_data = get_news_article()
+    redis_server.delete(stream)
+    if stream == "boc_fx":
+        redis_server.rpush(stream, json.dumps(data))
+        print(f"boc_fx has been stored in a Redis List: {data}")
+
+    elif stream == "news_articles":
+        for item in data:
+            redis_server.rpush(stream, json.dumps(item))
+            print(f"news_articles stored in a Redis List: {item}")
+    return data
+
+def get_news_from_redis():
+    list_items = redis_server.lrange('news_articles', 0, -1)
+    retrieved_list_dicts = [json.loads(item.decode('utf-8')) for item in list_items]
+    print(f"Retrieved dictionaries from List: {retrieved_list_dicts}")
+    return retrieved_list_dicts
+
+def get_items_from_redis(stream):
+    list_items = redis_server.lrange(stream, 0, -1)
+    retrieved_list_dicts = [json.loads(item.decode('utf-8')) for item in list_items]
+    print(f"Retrieved dictionaries from List: {retrieved_list_dicts}")
+    return retrieved_list_dicts
+
+
+news_data = get_news_article()
+
+q_news = q_items_to_redis(news_data, 'news_articles')
