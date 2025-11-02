@@ -7,7 +7,6 @@ import pandas as pd
 import logging
 import random
 from functools import cache
-import redis
 import duckdb as dd
 import json
 from langchain_community.utilities import SQLDatabase
