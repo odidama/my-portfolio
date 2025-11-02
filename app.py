@@ -1,18 +1,9 @@
 import streamlit as st
-import plotly.express as px
-from decimal import Decimal
 import datetime
 import random
 from PIL import Image
-
-from django.utils.termcolors import background
-from plotly.graph_objs.bar.marker.colorbar import Title
 import helpers
-import redis
-import json
-import pandas as pd
-import smtplib
-from email.mime.text import MIMEText
+
 
 eng, conn = helpers.connect_to_db()
 db_conn = conn.connect()
@@ -65,7 +56,7 @@ st.markdown(
         """
         <style>
         div[data-testid="stMetricValue"] > div {
-            font-size: 1.5em; /* Adjust this value as needed (e.g., 2em, 48px) */
+            font-size: 1.2em; /* Adjust this value as needed (e.g., 2em, 48px) */
         }
         </style>
         """,
@@ -114,7 +105,7 @@ with a:
             st.write(
                 """
                 Bachelor of Science <br> ITIL V3 <br>  Databricks Lakehouse Fundamentals Accreditation 
-                <br> Microsoft Certified Azure Cloud Fundamentals <br> Mastering Databricks & Apache spark -Build ETL data pipeline
+                <br> Microsoft Certified Azure Cloud Fundamentals <br> Mastering Databricks & Apache spark - Build ETL data pipeline
                 """, unsafe_allow_html=True
             )
     with ab:
@@ -199,9 +190,22 @@ with a:
     st.write("nnaemeka.okeke@gmail.com")
 
 with b:
-    st.metric(label=f"{city} - {time_} | BoC Rate - USD/CAD ", value=f"{temp}°c | {fx_val}", border=True, height=120)
-    # st.metric(label=f"{city} - {time_}", value=f"{remark}", border=True, height=120)
-    # st.metric(label=f"{today} - Bank of Canada Rate - USD/CAD", value=f"{fx_val}", border=True, height=160)
+    # st.metric(label=f"{city} - {time_} | BoC Rate - USD/CAD ", value=f"{temp}°c | {fx_val}", border=True, height=120)
+    # # st.metric(label=f"{city} - {time_}", value=f"{remark}", border=True, height=120)
+    # # st.metric(label=f"{today} - Bank of Canada Rate - USD/CAD", value=f"{fx_val}", border=True, height=160)
+    with st.container(border=True, height=430):
+        st.subheader(":blue[Please leave a message]")
+        st.write("")
+        contact_form = """
+        <form action="https://formsubmit.co/e984f1204845468c68e1500858661655" method="POST">
+        <input type="hidden" name="_captcha"  value="false">
+        <input type="text" name="Your Name" placeholder="Your name or contact" required>
+        <input type="email" name="Your email" placeholder="Your email address" required>
+        <textarea name="message" placeholder="Leave a message"></textarea>
+        <button type="submit">Send</button>
+        </form>
+        """
+        st.markdown(contact_form, unsafe_allow_html=True)
 
     with st.container(border=False, height=350,vertical_alignment='center'):
         st.subheader(":blue[Core Skills]")
@@ -219,19 +223,7 @@ with b:
             """, unsafe_allow_html=True
         )
 
-    with st.container(border=True, height=430):
-        st.subheader(":blue[Please leave a message]")
-        st.write("")
-        contact_form = """
-        <form action="https://formsubmit.co/nnaemeka.okeke@gmail.com" method="POST">
-        <input type="hidden" name="_captcha"  value="false">
-        <input type="text" name="Your Name" placeholder="Your name or contact" required>
-        <input type="email" name="Your email" placeholder="Your email address" required>
-        <textarea name="message" placeholder="Leave a message"></textarea>
-        <button type="submit">Send</button>
-        </form>
-        """
-        st.markdown(contact_form, unsafe_allow_html=True)
+
 
 
 

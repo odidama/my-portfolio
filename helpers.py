@@ -6,14 +6,10 @@ import datetime
 import pandas as pd
 import logging
 import random
-from functools import cache
 import duckdb as dd
 import json
 from langchain_community.utilities import SQLDatabase
-from langchain_community.document_loaders import TextLoader
-from langchain_text_splitters import  CharacterTextSplitter
 from dotenv import load_dotenv
-from pathlib import Path
 
 load_dotenv()
 
