@@ -166,31 +166,33 @@ def show_contact_form():
     pass
 
 
-def get_news_article():
-    dd_conn = dd.connect('db/geovac.db')
-    topics = ['cyber security']
-    date_today = datetime.datetime.now().strftime("%Y-%m-%d")
-    w_news_url = f"https://api.worldnewsapi.com/search-news?text={random.choice(topics)}&language=en&earliest-publish-date={date_today}"
-
-    headers = {
-        'x-api-key': st.secrets['w_news_api']
-    }
-
-    result = requests.get(w_news_url, headers=headers)
-    news_result = result.json()
-    all_news = []
-    for i in news_result['news']:
-        ind_news = {
-            "id": i["id"],
-            "news_author": i["author"],
-            "news_title": i["title"],
-            "news_url": i["url"]
-        }
-        all_news.append(ind_news)
-    news_df = pd.DataFrame(all_news)
-    dd_conn.execute("CREATE OR REPLACE TABLE news AS SELECT * FROM news_df")
-
-    return news_df
+# def get_news_article():
+#     dd_conn = dd.connect('db/geovac.db')
+#     topics = ['cyber security']
+#     date_today = datetime.datetime.now().strftime("%Y-%m-%d")
+#     w_news_url = f"https://api.worldnewsapi.com/search-news?text={random.choice(topics)}&language=en&earliest-publish-date={date_today}"
+#
+#     headers = {
+#         'x-api-key': st.secrets['w_news_api']
+#     }
+#
+#     result = requests.get(w_news_url, headers=headers)
+#     news_result = result.json()
+#     print(f"THis is news_result: \n {news_result}")
+#     all_news = []
+#     for i in news_result['news']:
+#         ind_news = {
+#             "id": i["id"],
+#             "news_author": i["author"],
+#             "news_title": i["title"],
+#             "news_url": i["url"]
+#         }
+#         all_news.append(ind_news)
+#     news_df = pd.DataFrame(all_news)
+#     print(f" This is the news_df data: \n {news_df}")
+#     dd_conn.execute("CREATE OR REPLACE TABLE news AS SELECT * FROM news_df")
+#
+#     return news_df
 
 
 
