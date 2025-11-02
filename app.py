@@ -11,17 +11,17 @@ import pandas as pd
 
 eng, conn = helpers.connect_to_db()
 db_conn = conn.connect()
-redis_server = helpers.connect_redis_cloud()
 today = datetime.date.today()
 # time_now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-weather = helpers.transform_api_response()
-temp = weather[["temp_c","name","text","last_updated"]].sample(n=1).values[0][0]
-city = weather[["temp_c","name","text","last_updated"]].sample(n=1).values[0][1]
-remark = weather[["temp_c","name","text","last_updated"]].sample(n=1).values[0][2]
-time_ = weather[["temp_c","name","text","last_updated"]].sample(n=1).values[0][3]
-boc_df = pd.read_sql_table("boc_fx", con=conn)
-fx_val = boc_df["value"].head(1).tolist()[0]
+# weather = helpers.transform_api_response()
+weather = helpers.query_duck_db("select * from weather")
+temp = weather['temp_f'][0]
+city = weather['name'][0]
+remark = weather['text'][0]
+time_ = weather['last_updated'][0]
+boc_df = helpers.query_duck_db("select * from boc_fx")
+fx_val = boc_df['value'][0]
 
 st.set_page_config(
     page_title="My Portfolio Page",
@@ -186,12 +186,14 @@ with b:
     # st.metric(label=f"{city} - {time_}", value=f"{remark}", border=True, height=120)
     # st.metric(label=f"{today} - Bank of Canada Rate - USD/CAD", value=f"{fx_val}", border=True, height=160)
     with st.container(border=True, height=250):
-        news_dict_list = helpers.get_items_from_redis("news_articles")
-        single_article = news_dict_list[random.randint(1, len(news_dict_list))]
+        # news_dict_list = helpers.get_items_from_redis("news_articles")
+        # single_article = news_dict_list[random.randint(1, len(news_dict_list))]
 
-        author_b = single_article['news_author']
-        title_b = single_article['news_title']
-        url_b = single_article['news_url']
+        single_article = helpers.query_duck_db("select * from news USING SAMPLE 1 ROWS")
+
+        author_b = single_article['news_author'][0]
+        title_b = single_article['news_title'][0]
+        url_b = single_article['news_url'][0]
 
 
         st.write(f"""

@@ -8,6 +8,7 @@ import logging
 import random
 from functools import cache
 import redis
+import duckdb as dd
 import json
 from langchain_community.utilities import SQLDatabase
 from langchain_community.document_loaders import TextLoader
@@ -24,6 +25,8 @@ load_dotenv()
 
 endDate = datetime.date.today()
 startDate = endDate - datetime.timedelta(days=1)
+# dd_conn = dd.connect('db/geovac.db')
+# dd_conn = create_engine("duckdb:///db/geovac.db")
 
 # noinspection PyPackageRequirements
 cities = ['Mexico','New York','Toronto','Guadalajara','Montreal','Los Angeles','Chicago','Vancouver',
@@ -89,44 +92,35 @@ def fetch_data(*args):
 
 def transform_api_response():
     boc_fx_response, persons_response, weather_response = fetch_data(startDate, endDate)
+    dd_conn = dd.connect('db/geovac.db')
     # boc_rdbms_format = []
-    # boc_normalized = []
+    boc_normalized = []
     for i in boc_fx_response["observations"]:
-        # print(i)
         data_prep = {'date': i['d'],
                      'value': i['FXUSDCAD']['v']
                      }
         for key, value in boc_fx_response['seriesDetail'].items():
             data_prep["label"] = value['label']
-        # print(data_prep)
-        q_items_to_redis(data_prep, 'boc_fx')
-        print(f"boc_fx data has been queued on Redis: {data_prep}")
-    # for i in boc_fx_response["observations"]:
-    #     # print(i)
-    #     data_prep = {'date': i['d'],
-    #                  'value': i['FXUSDCAD']['v']
-    #                  }
-    #     for key, value in boc_fx_response['seriesDetail'].items():
-    #         data_prep["label"] = value['label']
-    #     boc_normalized.append(data_prep)
-    # boc_rdbms_format = pd.DataFrame(boc_normalized)
-    # # print(boc_rdbms_format)
-    # boc_rdbms_format.to_sql(name='boc_fx', con=conn, if_exists='append', index=False)
+        boc_normalized.append(data_prep)
+        bocfx_df = pd.DataFrame(boc_normalized)
+        dd_conn.execute("CREATE OR REPLACE TABLE boc_fx AS SELECT * FROM bocfx_df")
+        print(f"boc_fx data has been written to duckdb: {data_prep}")
 
-    person_rdbms_format = []
-    # person_normalized = []
-    # for items in persons_response['data']:
-    #     # print(items)
-    #     data_prep = {'country_code': str(items['properties']['country_codes']).strip('[').strip(']').replace("'", "").replace('',"ZZZ"),
-    #                  'name': items['properties']['name'],
-    #                  'source_schema': items['schema']
-    #                  }
-    #     person_normalized.append(data_prep)
-    # person_rdbms_format = pd.DataFrame(person_normalized)
-    # # print(person_rdbms_format)
-    # person_rdbms_format.to_sql(name='persons', con=conn, if_exists='append', index=False)
 
-    weather_rdbms_format = []
+    person_df = []
+    person_normalized = []
+    for items in persons_response['data']:
+        # print(items)
+        data_prep = {'country_code': str(items['properties']['country_codes']).strip('[').strip(']').replace("'", "").replace('',"ZZZ"),
+                     'name': items['properties']['name'],
+                     'source_schema': items['schema']
+                     }
+        person_normalized.append(data_prep)
+    person_df = pd.DataFrame(person_normalized)
+    # print(person_rdbms_format)
+    dd_conn.execute("CREATE OR REPLACE TABLE persons AS SELECT * FROM person_df")
+
+    weather_df = []
     normalized = []
     for k, v in weather_response['location'].items():
         if k == 'name':
@@ -158,11 +152,13 @@ def transform_api_response():
             data_prep['text'] = v
             # data_prep['id'] = now_time
     normalized.append(data_prep)
-    weather_rdbms_format = pd.DataFrame(normalized)
+    weather_df = pd.DataFrame(normalized)
     # print(weather_rdbms_format)
-    # weather_rdbms_format.to_sql(name='weather', con=conn, if_exists='append', index=False)
+    dd_conn.execute("CREATE OR REPLACE TABLE weather AS SELECT * FROM weather_df")
 
-    return weather_rdbms_format
+    dd_conn.close()
+
+    return None
 
 @st.dialog(title="Contact Me", width="small")
 def show_contact_form():
@@ -171,6 +167,7 @@ def show_contact_form():
 
 
 def get_news_article():
+    dd_conn = dd.connect('db/geovac.db')
     topics = ['cyber security']
     date_today = datetime.datetime.now().strftime("%Y-%m-%d")
     w_news_url = f"https://api.worldnewsapi.com/search-news?text={random.choice(topics)}&language=en&earliest-publish-date={date_today}"
@@ -190,71 +187,18 @@ def get_news_article():
             "news_url": i["url"]
         }
         all_news.append(ind_news)
+    news_df = pd.DataFrame(all_news)
+    dd_conn.execute("CREATE OR REPLACE TABLE news AS SELECT * FROM news_df")
 
-    return all_news
-
-def connect_redis_cloud():
-    redis_url = st.secrets['cl_redis_url']
-    try:
-        r = redis.from_url(redis_url)
-
-        # r = redis.Redis(
-        #     host= st.secrets['cl_redis_host'],
-        #     port= 16478,
-        #     decode_responses=True,
-        #     username=st.secrets['cl_redis_user'],
-        #     password=st.secrets['cl_redis_password'],
-        #     db=1
-        # )
-        return r
-    except redis.exceptions.ConnectionError as e:
-        st.error(f"Could not connect to Redis Cloud: {e}")
-    except Exception as e:
-        st.error(f"An unexpected error occurred: {e}")
-        # success = r.set('foo', 'bar')
-        # True
-
-        # result = r.get('foo')
-        # print(result)
-        # >>> bar
-
-redis_server = connect_redis_cloud()
+    return news_df
 
 
-# def q_news_to_redis():
-#     news_data = get_news_article()
-#     redis_server.delete('news_articles')
-#     for news in news_data:
-#         redis_server.rpush('news_articles', json.dumps(news))
-#     print("Dictionaries stored in a Redis List.")
-#     return news_data
 
-def q_items_to_redis(data, stream):
-    # news_data = get_news_article()
-    redis_server.delete(stream)
-    if stream == "boc_fx":
-        redis_server.rpush(stream, json.dumps(data))
-        print(f"boc_fx has been stored in a Redis List: {data}")
-
-    elif stream == "news_articles":
-        for item in data:
-            redis_server.rpush(stream, json.dumps(item))
-            print(f"news_articles stored in a Redis List: {item}")
-    return data
-
-def get_news_from_redis():
-    list_items = redis_server.lrange('news_articles', 0, -1)
-    retrieved_list_dicts = [json.loads(item.decode('utf-8')) for item in list_items]
-    print(f"Retrieved dictionaries from List: {retrieved_list_dicts}")
-    return retrieved_list_dicts
-
-def get_items_from_redis(stream):
-    list_items = redis_server.lrange(stream, 0, -1)
-    retrieved_list_dicts = [json.loads(item.decode('utf-8')) for item in list_items]
-    print(f"Retrieved dictionaries from List: {retrieved_list_dicts}")
-    return retrieved_list_dicts
-
+def query_duck_db(sql_):
+    dd_conn = dd.connect('db/geovac.db')
+    result = dd_conn.execute(sql_).fetchdf()
+    dd_conn.close()
+    return result
 
 news_data = get_news_article()
 
-q_news = q_items_to_redis(news_data, 'news_articles')
