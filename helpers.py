@@ -202,5 +202,5 @@ def query_duck_db(sql_):
     dd_conn.close()
     return result
 
-news_data = get_news_article()
+# news_data = get_news_article()
 
