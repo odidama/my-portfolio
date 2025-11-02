@@ -3,11 +3,16 @@ import plotly.express as px
 from decimal import Decimal
 import datetime
 import random
+from PIL import Image
+
+from django.utils.termcolors import background
 from plotly.graph_objs.bar.marker.colorbar import Title
 import helpers
 import redis
 import json
 import pandas as pd
+import smtplib
+from email.mime.text import MIMEText
 
 eng, conn = helpers.connect_to_db()
 db_conn = conn.connect()
@@ -36,7 +41,7 @@ st.markdown(
         width: 310px !important; /* Set a fixed width */
         min-width: 320px; /* Set a minimum width */
         max-width: 500px; /* Set a maximum width */
-        background-color: #00091a;
+        # background-color: #4d4d4d  /*00091a*/;
     }
     </style>
     """,
@@ -71,12 +76,18 @@ st.markdown("""
     <style>
     .block-container {
         padding-top: 1rem; /* Adjust this value as needed */
-        padding-bottom: 0rem;
+        padding-bottom: 1rem;
         padding-left: 5rem;
         padding-right: 5rem;
     }
     </style>
     """, unsafe_allow_html=True)
+
+def local_css(filename):
+    with open(filename) as f:
+        st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
+
+local_css("style/style.css")
 
 with st.sidebar:
     st.sidebar.page_link(page="app.py", label="Home")
@@ -94,17 +105,23 @@ with a:
     # a.title(f"The Data Artist 🦧", anchor=False)
     # st.write("\n")
     a.title(":blue[Nnaemeka Benjamin Okeke]")
-    a.write(":grey[Full-stack data engineer assisting enterprises in automating workflows and supporting scalable data ecosystems.]")
+    a.write(":grey[Full-stack data engineer assisting enterprises in automating workflows and designing scalable data ecosystems.]")
     # st.write("\n")
-    st.subheader(":blue[Education and Training]", anchor=False)
-    st.write(
-        """
-        :green[Bachelor of Science <br> ITIL V3 <br>  Databricks Lakehouse Fundamentals Accreditation 
-        <br> Microsoft Certified Azure Cloud Fundamentals <br> Mastering Databricks & Apache spark -Build ETL data pipeline]
-        <br>nnaemeka.okeke@gmail.com
-        """,unsafe_allow_html=True
-    )
-    st.write("\n")
+    aa,ab = st.columns([1,1])
+    with aa:
+        with st.container(width=400, height=260, border=False):
+            st.subheader(":blue[Education and Training]", anchor=False)
+            st.write(
+                """
+                Bachelor of Science <br> ITIL V3 <br>  Databricks Lakehouse Fundamentals Accreditation 
+                <br> Microsoft Certified Azure Cloud Fundamentals <br> Mastering Databricks & Apache spark -Build ETL data pipeline
+                """, unsafe_allow_html=True
+            )
+    with ab:
+        with st.container(width=400, height=250, border=False ):
+            image = Image.open("ice.jpeg")
+            # img_rsz = image.resize()
+            st.image(image, width=250)
     st.subheader(":blue[Summary]", anchor=False)
     st.write(
         """
@@ -182,26 +199,10 @@ with a:
     st.write("nnaemeka.okeke@gmail.com")
 
 with b:
-    st.metric(label=f"{city} - {time_}   |   BoC Rate - USD/CAD ", value=f"{temp}°c | {fx_val}", border=True, height=120)
+    st.metric(label=f"{city} - {time_} | BoC Rate - USD/CAD ", value=f"{temp}°c | {fx_val}", border=True, height=120)
     # st.metric(label=f"{city} - {time_}", value=f"{remark}", border=True, height=120)
     # st.metric(label=f"{today} - Bank of Canada Rate - USD/CAD", value=f"{fx_val}", border=True, height=160)
-    # with st.container(border=True, height=250):
-    #     # news_dict_list = helpers.get_items_from_redis("news_articles")
-    #     # single_article = news_dict_list[random.randint(1, len(news_dict_list))]
-    #
-    #     single_article = helpers.query_duck_db("select * from news USING SAMPLE 1 ROWS")
-    #
-    #     author_b = single_article['news_author'][0]
-    #     title_b = single_article['news_title'][0]
-    #     url_b = single_article['news_url'][0]
-    #
-    #
-    #     st.write(f"""
-    #     **Latest from around the world:**
-    #     <br>:grey[{title_b}]
-    #     <br>:grey[by {author_b}]
-    #     <br>{url_b}
-    #     """, unsafe_allow_html=True)
+
     with st.container(border=False, height=350,vertical_alignment='center'):
         st.subheader(":blue[Core Skills]")
         st.write(
@@ -218,7 +219,41 @@ with b:
             """, unsafe_allow_html=True
         )
 
+    with st.container(border=True, height=430):
+        st.subheader(":blue[Please leave a message]")
+        st.write("")
+        contact_form = """
+        <form action="https://formsubmit.co/nnaemeka.okeke@gmail.com" method="POST">
+        <input type="hidden" name="_captcha"  value="false">
+        <input type="text" name="Your Name" placeholder="Your name or contact" required>
+        <input type="email" name="Your email" placeholder="Your email address" required>
+        <textarea name="message" placeholder="Leave a message"></textarea>
+        <button type="submit">Send</button>
+        </form>
+        """
+        st.markdown(contact_form, unsafe_allow_html=True)
 
+
+
+
+
+
+    #     # news_dict_list = helpers.get_items_from_redis("news_articles")
+    #     # single_article = news_dict_list[random.randint(1, len(news_dict_list))]
+    #
+    #     single_article = helpers.query_duck_db("select * from news USING SAMPLE 1 ROWS")
+    #
+    #     author_b = single_article['news_author'][0]
+    #     title_b = single_article['news_title'][0]
+    #     url_b = single_article['news_url'][0]
+    #
+    #
+    #     st.write(f"""
+    #     **Latest from around the world:**
+    #     <br>:grey[{title_b}]
+    #     <br>:grey[by {author_b}]
+    #     <br>{url_b}
+    #     """, unsafe_allow_html=True)
 # st.markdown("---")
 # boc_df = pd.read_sql_table("boc_fx", con=conn)
 # fx_val = boc_df["value"].head(1).tolist()[0]
