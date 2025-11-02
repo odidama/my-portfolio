@@ -185,23 +185,23 @@ with b:
     st.metric(label=f"{city} - {time_}   |   BoC Rate - USD/CAD ", value=f"{temp}°c | {fx_val}", border=True, height=120)
     # st.metric(label=f"{city} - {time_}", value=f"{remark}", border=True, height=120)
     # st.metric(label=f"{today} - Bank of Canada Rate - USD/CAD", value=f"{fx_val}", border=True, height=160)
-    with st.container(border=True, height=250):
-        # news_dict_list = helpers.get_items_from_redis("news_articles")
-        # single_article = news_dict_list[random.randint(1, len(news_dict_list))]
-
-        single_article = helpers.query_duck_db("select * from news USING SAMPLE 1 ROWS")
-
-        author_b = single_article['news_author'][0]
-        title_b = single_article['news_title'][0]
-        url_b = single_article['news_url'][0]
-
-
-        st.write(f"""
-        **Latest from around the world:**
-        <br>:grey[{title_b}]
-        <br>:grey[by {author_b}]
-        <br>{url_b}
-        """, unsafe_allow_html=True)
+    # with st.container(border=True, height=250):
+    #     # news_dict_list = helpers.get_items_from_redis("news_articles")
+    #     # single_article = news_dict_list[random.randint(1, len(news_dict_list))]
+    #
+    #     single_article = helpers.query_duck_db("select * from news USING SAMPLE 1 ROWS")
+    #
+    #     author_b = single_article['news_author'][0]
+    #     title_b = single_article['news_title'][0]
+    #     url_b = single_article['news_url'][0]
+    #
+    #
+    #     st.write(f"""
+    #     **Latest from around the world:**
+    #     <br>:grey[{title_b}]
+    #     <br>:grey[by {author_b}]
+    #     <br>{url_b}
+    #     """, unsafe_allow_html=True)
     with st.container(border=False, height=350,vertical_alignment='center'):
         st.subheader(":blue[Core Skills]")
         st.write(
