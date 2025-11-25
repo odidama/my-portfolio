@@ -5,8 +5,8 @@ from PIL import Image
 import helpers
 
 
-eng, conn = helpers.connect_to_db()
-db_conn = conn.connect()
+# eng, conn = helpers.connect_to_db()
+# db_conn = conn.connect()
 today = datetime.date.today()
 # time_now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
@@ -190,9 +190,6 @@ with a:
     st.write("nnaemeka.okeke@gmail.com")
 
 with b:
-    # st.metric(label=f"{city} - {time_} | BoC Rate - USD/CAD ", value=f"{temp}°c | {fx_val}", border=True, height=120)
-    # # st.metric(label=f"{city} - {time_}", value=f"{remark}", border=True, height=120)
-    # # st.metric(label=f"{today} - Bank of Canada Rate - USD/CAD", value=f"{fx_val}", border=True, height=160)
     with st.container(border=True, height=430):
         st.subheader(":blue[Please leave a message]")
         st.write("")
@@ -224,42 +221,6 @@ with b:
         )
 
 
-
-
-
-
-
-
-    #     # news_dict_list = helpers.get_items_from_redis("news_articles")
-    #     # single_article = news_dict_list[random.randint(1, len(news_dict_list))]
-    #
-    #     single_article = helpers.query_duck_db("select * from news USING SAMPLE 1 ROWS")
-    #
-    #     author_b = single_article['news_author'][0]
-    #     title_b = single_article['news_title'][0]
-    #     url_b = single_article['news_url'][0]
-    #
-    #
-    #     st.write(f"""
-    #     **Latest from around the world:**
-    #     <br>:grey[{title_b}]
-    #     <br>:grey[by {author_b}]
-    #     <br>{url_b}
-    #     """, unsafe_allow_html=True)
-# st.markdown("---")
-# boc_df = pd.read_sql_table("boc_fx", con=conn)
-# fx_val = boc_df["value"].head(1).tolist()[0]
-# # l_col, r_col = st.columns(2)
-# # with r_col:
-# #     # st.markdown("Daily BOC Rate Figures")
-# #     fig = px.line(boc_df, x=boc_df["date"], y=boc_df["value"], title="Bank Of Canada FX Rate", height=400)
-# #     st.plotly_chart(fig, use_container_width=True )
-#
-#
-# weather_tab = pd.read_sql_table("weather", con=conn)
-#
-#
-# st.dataframe(weather_tab, height=150, width=800, hide_index=True)
 st.write("\n")
 st.write("\n")
 st.write("\n")
